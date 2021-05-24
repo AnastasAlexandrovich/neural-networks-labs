@@ -13,14 +13,11 @@ from tensorflow.keras.models import Sequential, Model
 from matplotlib import pyplot as plt
 import matplotlib.image as mpimg
 
+
 IMG_WIDTH = 100
 IMG_HEIGHT = 100
 images = r'N:\Лабы АН\neural-networks-labs\lr1\dataset\training_set\training_set'
 images_test = r'N:\Лабы АН\neural-networks-labs\lr1\dataset\test_set\test_set'
-
-
-# images = r'N:\Лабы АН\neural-networks-labs\lr1\dataset\fruits\fruits-360\Training'
-# images_test = r'N:\Лабы АН\neural-networks-labs\lr1\dataset\fruits\fruits-360\Test'
 
 
 def create_dataset(img_folder):
@@ -43,48 +40,36 @@ def create_dataset(img_folder):
 # массив изображений и наимеование каждого класса изображений
 img_data, class_names = create_dataset(images)
 img_data_test, class_names_test = create_dataset(images_test)
+
 # создаем словарь имя класса - метка (имя - номер)
 class_names_dict = {k: v for v, k in enumerate(np.unique(class_names))}
-class_names_dict_test = {k: v for v, k in enumerate(np.unique(class_names_test))}
+class_names_dict_test = {k: v for v, k in enumerate(np.unique(class_names))}
+
 # создаем список меток
 classes = [class_names_dict[class_names[i]] for i in range(len(class_names))]
 classes_test = [class_names_dict_test[class_names_test[i]] for i in range(len(class_names_test))]
+train_labels = tf.cast(list(map(int, classes)), tf.int32)
+test_labels = tf.cast(list(map(int, classes_test)), tf.int32)
+# train_labels = np.asarray(classes).astype('float32').reshape((-1,1))
+# test_labels = np.asarray(classes_test).astype('float32').reshape((-1,1))
 
-# отобразим первые 25 изображений из обучающего набора и отобразим имя класса под каждым изображением.
-# plt.figure(figsize=(10,10))
-# for i in range(25):
-#     plt.subplot(5,5,i+1)
-#     plt.xticks([])
-#     plt.yticks([])
-#     plt.grid(False)
-#     plt.imshow(img_data[i], cmap=plt.cm.binary)
-#     plt.xlabel(class_names[i])
-# plt.show()
+#  преобразуем всё в nparray
+train_images = np.array([np.array(elem) for elem in img_data])
+test_images = np.array([np.array(elem) for elem in img_data_test])
 
-# создаем нашу модель
-model = tf.keras.Sequential([
-    tf.keras.layers.Flatten(input_shape=(IMG_HEIGHT, IMG_WIDTH, 3)),
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dense(10)
+
+model = keras.Sequential([
+    keras.layers.Flatten(input_shape=(IMG_HEIGHT, IMG_WIDTH, 3)),
+    keras.layers.Dense(512, activation='relu'),
+    keras.layers.Dense(256, activation='relu'),
+    keras.layers.Dense(128, activation='relu'),
+    keras.layers.Dense(1, activation='sigmoid')
 ])
 
-# компилируем нашу модель
-# model.compile(optimizer='adam',
-#               loss='categorical_crossentropy',
-#               metrics=['accuracy'])
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics='accuracy')
 
-# обучаем модель
-images_data_in_numbers = tf.cast(np.array(img_data), tf.float32)
-images_data_in_numbers_test = tf.cast(np.array(img_data_test), tf.float32)
-print(images_data_in_numbers.shape)
-# images_data_in_numbers = tf.transpose(images_data_in_numbers, perm=[0, 1, 2, 3])
-labels = tf.cast(list(map(int, classes)), tf.int32)
-labels_test = tf.cast(list(map(int, classes_test)), tf.int32)
-print(labels_test)
-model.fit(images_data_in_numbers, labels, epochs=10)
-
-# оцениваем
-
-test_loss, test_acc = model.evaluate(images_data_in_numbers_test, labels_test, verbose=2)
+model.fit(train_images, train_labels, epochs=10, batch_size=32)
+test_loss, test_acc = model.evaluate(test_images, test_labels)
 
 print('\nTest accuracy:', test_acc)
+
